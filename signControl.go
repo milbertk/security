@@ -29,6 +29,7 @@ type LocalJWTClaims struct {
 // ValidateFirebaseToken validates a Firebase token and returns the decoded user
 func ValidateFirebaseToken(firebaseToken string) (*auth.Token, error) {
 	// Load Firebase credentials
+	println("start validate firebase Token")
 	text, err := class.NewJSONReader("fileRoute.json")
 	if err != nil {
 		return nil, fmt.Errorf("error reading fileRoute.json: %w", err)
