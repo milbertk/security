@@ -74,7 +74,7 @@ func GenerateLocalJWT(uid, email, name, picture, signInProvider, role string, em
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 1)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
-			Issuer:    "your-backend", // <- Replace with your app name or URL
+			Issuer:    "Aleph", // <- Replace with your app name or URL
 		},
 	}
 
