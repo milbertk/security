@@ -3,17 +3,19 @@ package security
 import (
 	"context"
 	"net/http"
-
-	databaseuserofcompany "github.com/milbertk/usersAppAK/database/databaseUserOfCompany"
 )
 
 // RequireCompanyAccess ensures the authenticated user is linked to the company
 // the request targets AND holds a management role (OWNER / MANAGER).
 //
 // It must run AFTER authentication, because it reads the UID from the JWT
-// claims placed in context by AuthMiddleware. On success it stores the active
-// company ID and the resolved company role in the request context, retrievable
-// with GetActiveCompanyID(r) and GetActiveCompanyRole(r).
+// claims placed in context by AuthMiddleware. The database check is performed
+// directly by DValidateCompanyAccess (same style as DValidateStatus), so this
+// package has no external database dependency.
+//
+// On success it stores the active company ID and the resolved company role in
+// the request context, retrievable with GetActiveCompanyID(r) and
+// GetActiveCompanyRole(r).
 func RequireCompanyAccess(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		claims, ok := GetClaims(r)
@@ -28,7 +30,7 @@ func RequireCompanyAccess(next http.Handler) http.Handler {
 			return
 		}
 
-		allowed, role, err := databaseuserofcompany.UserHasManagementAccess(companyID, claims.UID)
+		allowed, role, err := DValidateCompanyAccess(companyID, claims.UID)
 		if err != nil {
 			http.Error(w, "Failed to validate company access", http.StatusInternalServerError)
 			return
