@@ -12,15 +12,18 @@ const (
 	companyRoleCtxKey ctxKey = "activeCompanyRole"
 )
 
-// CompanyHeaderName is the HTTP header the frontend uses to tell the backend
-// which company the current action targets. The React app should read the
-// selected company from localStorage and send it on every request, e.g.:
-//
-//	fetch(url, { headers: { "X-Company-ID": selectedCompanyId }, credentials: "include" })
+// CompanyHeaderName is the HTTP header the frontend MAY use to tell the backend
+// which company the current action targets. It is optional: the middleware also
+// reads the company ID from the URL path (/companies/{companyId}/...), which is
+// how the REST routes already carry it.
 const CompanyHeaderName = "X-Company-ID"
 
-// extractCompanyID pulls the target company ID from the request. It prefers
-// the X-Company-ID header and falls back to a "companyId" query parameter.
+// extractCompanyID pulls the target company ID from the request, checking, in
+// order:
+//  1. the X-Company-ID header,
+//  2. the "companyId" query parameter,
+//  3. the URL path segment right after "/companies/".
+//
 // Change this one function if you ever move the value somewhere else.
 func extractCompanyID(r *http.Request) (string, bool) {
 	if v := strings.TrimSpace(r.Header.Get(CompanyHeaderName)); v != "" {
@@ -31,7 +34,26 @@ func extractCompanyID(r *http.Request) (string, bool) {
 		return v, true
 	}
 
+	// Path fallback: .../companies/{companyId}/...
+	if v := companyIDFromPath(r.URL.Path); v != "" {
+		return v, true
+	}
+
 	return "", false
+}
+
+// companyIDFromPath returns the path segment immediately after "companies",
+// or "" if there isn't one. Example:
+//
+//	/companies/fb47a31b-.../company-users/774d38fa-...  ->  "fb47a31b-..."
+func companyIDFromPath(path string) string {
+	parts := strings.Split(strings.Trim(path, "/"), "/")
+	for i, p := range parts {
+		if p == "companies" && i+1 < len(parts) {
+			return strings.TrimSpace(parts[i+1])
+		}
+	}
+	return ""
 }
 
 // GetActiveCompanyID returns the company ID attached by RequireCompanyAccess.
