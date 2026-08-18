@@ -8,8 +8,9 @@ import (
 // Context keys for company-scoped values, following the same pattern as
 // claimsCtxKey in authMiddleware.go.
 const (
-	companyIDCtxKey   ctxKey = "activeCompanyID"
-	companyRoleCtxKey ctxKey = "activeCompanyRole"
+	companyIDCtxKey    ctxKey = "activeCompanyID"
+	companyRoleCtxKey  ctxKey = "activeCompanyRole"
+	companyEmailCtxKey ctxKey = "activeCompanyEmail"
 )
 
 // CompanyHeaderName is the HTTP header the frontend MAY use to tell the backend
@@ -66,5 +67,13 @@ func GetActiveCompanyID(r *http.Request) (string, bool) {
 // by RequireCompanyAccess.
 func GetActiveCompanyRole(r *http.Request) (string, bool) {
 	v, ok := r.Context().Value(companyRoleCtxKey).(string)
+	return v, ok
+}
+
+// GetActiveCompanyEmail returns the user's official e-mail (from
+// public.usfirebasedata) attached by RequireCompanyAccess. This value is
+// resolved server-side and must be trusted over anything sent by the frontend.
+func GetActiveCompanyEmail(r *http.Request) (string, bool) {
+	v, ok := r.Context().Value(companyEmailCtxKey).(string)
 	return v, ok
 }

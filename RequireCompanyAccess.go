@@ -10,12 +10,13 @@ import (
 //
 // It must run AFTER authentication, because it reads the UID from the JWT
 // claims placed in context by AuthMiddleware. The database check is performed
-// directly by DValidateCompanyAccess (same style as DValidateStatus), so this
-// package has no external database dependency.
+// directly by DValidateCompanyAccess (same style as DValidateStatus).
 //
-// On success it stores the active company ID and the resolved company role in
-// the request context, retrievable with GetActiveCompanyID(r) and
-// GetActiveCompanyRole(r).
+// On success it stores in the request context, retrievable with the getters
+// in companyContext.go:
+//   - the active company ID  -> GetActiveCompanyID(r)
+//   - the resolved role      -> GetActiveCompanyRole(r)
+//   - the official e-mail    -> GetActiveCompanyEmail(r)  (from usfirebasedata)
 func RequireCompanyAccess(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		claims, ok := GetClaims(r)
@@ -30,7 +31,7 @@ func RequireCompanyAccess(next http.Handler) http.Handler {
 			return
 		}
 
-		allowed, role, err := DValidateCompanyAccess(companyID, claims.UID)
+		allowed, role, email, err := DValidateCompanyAccess(companyID, claims.UID)
 		if err != nil {
 			http.Error(w, "Failed to validate company access", http.StatusInternalServerError)
 			return
@@ -45,6 +46,7 @@ func RequireCompanyAccess(next http.Handler) http.Handler {
 
 		ctx := context.WithValue(r.Context(), companyIDCtxKey, companyID)
 		ctx = context.WithValue(ctx, companyRoleCtxKey, role)
+		ctx = context.WithValue(ctx, companyEmailCtxKey, email)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
